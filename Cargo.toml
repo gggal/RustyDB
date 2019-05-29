@@ -1,0 +1,11 @@
+[package]
+name = "rusty_db"
+version = "0.1.0"
+authors = ["gal"]
+
+[dependencies]
+regex = "1"
+futures = "0.1"
+
+[build-dependencies]
+regex = "1"
