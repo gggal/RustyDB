@@ -1,10 +1,10 @@
 extern crate futures;
 extern crate regex;
 
-mod filter;
-mod logical_operation;
-mod parser;
-mod record;
+pub mod filter;
+pub mod logical_operation;
+pub mod parser;
+pub mod record;
 
 fn main() {
     // //parser::parse("hello");

@@ -44,3 +44,18 @@ impl UpdateQuery {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use parser::UpdateQuery;
+
+    #[test]
+    fn missing_set_clause() {
+        assert!(UpdateQuery::new("update 'a_table' arg1=1;").is_err())
+    }
+
+    #[test]
+    fn invalid_separator_in_set_clause() {
+        assert!(UpdateQuery::new("update 'a_table' set arg1=1 and arg2=2;").is_err())
+    }
+}

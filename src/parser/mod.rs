@@ -35,7 +35,7 @@ pub fn parse(text_query: &str) -> Option<Box<Query>> {
         .next()
         .unwrap()
     {
-        "insert" => match InsertQuery::new(text_query.to_string()) {
+        "insert" => match InsertQuery::new(text_query) {
             Ok(boxed_query) => Some(boxed_query),
             Err(err_msg) => {
                 println!(
@@ -45,7 +45,7 @@ pub fn parse(text_query: &str) -> Option<Box<Query>> {
                 None
             }
         },
-        "select" => match SelectQuery::new(text_query.to_string()) {
+        "select" => match SelectQuery::new(text_query) {
             Ok(boxed_query) => Some(boxed_query),
             Err(err_msg) => {
                 println!(
@@ -65,7 +65,7 @@ pub fn parse(text_query: &str) -> Option<Box<Query>> {
                 None
             }
         },
-        "delete" => match DeleteQuery::new(text_query.to_string()) {
+        "delete" => match DeleteQuery::new(text_query) {
             Ok(boxed_query) => Some(boxed_query),
             Err(err_msg) => {
                 println!(
@@ -75,7 +75,7 @@ pub fn parse(text_query: &str) -> Option<Box<Query>> {
                 None
             }
         },
-        "create" => match CreateQuery::new(text_query.to_string()) {
+        "create" => match CreateQuery::new(text_query) {
             Ok(boxed_query) => Some(boxed_query),
             Err(err_msg) => {
                 println!(
@@ -85,7 +85,7 @@ pub fn parse(text_query: &str) -> Option<Box<Query>> {
                 None
             }
         },
-        "drop" => match DropQuery::new(text_query.to_string()) {
+        "drop" => match DropQuery::new(text_query) {
             Ok(boxed_query) => Some(boxed_query),
             Err(err_msg) => {
                 println!(

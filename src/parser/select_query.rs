@@ -9,7 +9,7 @@ pub struct SelectQuery {
 }
 
 impl SelectQuery {
-    pub fn new(text: String) -> Result<Box<SelectQuery>, String> {
+    pub fn new(text: &str) -> Result<Box<SelectQuery>, String> {
         //match text.match("^select * from table where *"&)
         let regex = Regex::new(r"^(?i)select[[:space:]]+(?P<cols>([[:alnum:]]*\.)?[[:alnum:]]+[[:space:]]+(as[[:space:]]+[[:alnum:]]+)?)[[:space:]]*from[[:space:]]+((?P<sub>\(.*\))|(?P<table>a))[[:space:]]+(where[[:space:]]+(?P<tree>.*))?$").unwrap();
 
@@ -104,16 +104,63 @@ impl SelectQuery {
         match regex.captures(&text) {
             Some(matched) => match (matched.name("sub"), matched.name("alias")) {
                 (None, _) => None,
-                (Some(sub), None) => match SelectQuery::new(sub.as_str().to_string()) {
-                    Err(a) => None,
+                (Some(sub), None) => match SelectQuery::new(sub.as_str()) {
+                    Err(_) => None,
                     Ok(s) => Some((Err(s), None)),
                 },
-                (Some(sub), Some(al)) => match SelectQuery::new(sub.as_str().to_string()) {
-                    Err(a) => None,
+                (Some(sub), Some(al)) => match SelectQuery::new(sub.as_str()) {
+                    Err(_) => None,
                     Ok(s) => Some((Err(s), Some(al.as_str().to_string()))),
                 },
             },
             None => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use parser::SelectQuery;
+
+    #[test]
+    fn omitted_alias_select() {
+        assert!(SelectQuery::new("select a.arg1 from 'a_table' a;").is_ok())
+    }
+
+    #[test]
+    fn unknown_operator_in_where_clause() {
+        assert!(SelectQuery::new("select arg1 from 'a_table' where arg1 ? 2;").is_err())
+    }
+
+    #[test]
+    fn corrupt_filter_tree_in_where_clause_1() {
+        assert!(SelectQuery::new("select arg1 from 'a_table' where arg1 + 2;").is_err())
+    }
+
+    #[test]
+    fn corrupt_filter_tree_in_where_clause_2() {
+        assert!(SelectQuery::new("select arg1 from 'a_table' where 1 < 2 and arg1 + 2;").is_err())
+    }
+
+    #[test]
+    fn empty_where_clause() {
+        assert!(SelectQuery::new("select 123 from 'a_table' where;").is_err())
+    }
+
+    #[test]
+    fn missing_where_clause() {
+        assert!(SelectQuery::new("select 123 from 'a_table';").is_ok())
+    }
+
+    #[test]
+    fn missing_on_in_join_clause() {
+        assert!(SelectQuery::new("select a.arg1 from 'a_table' a join 'b_table' b;").is_err())
+    }
+
+    #[test]
+    fn ommitting_alias_in_join_clause() {
+        assert!(
+            SelectQuery::new("select a.arg1 from 'a_table' a join 'b_table' b on arg1;").is_err()
+        )
     }
 }

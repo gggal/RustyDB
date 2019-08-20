@@ -7,7 +7,8 @@ pub struct FilterTree {
     vars: HashMap<String, Type>,
 }
 
-//todo var
+//todo var, date
+#[derive(Debug)]
 pub enum Type {
     INT(i64),
     DOUBLE(f64),
@@ -268,4 +269,3 @@ impl Clone for Type {
         }
     }
 }
-

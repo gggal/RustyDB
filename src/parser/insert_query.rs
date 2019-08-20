@@ -9,7 +9,7 @@ pub struct InsertQuery {
 }
 
 impl InsertQuery {
-    pub fn new(text: String) -> Result<Box<InsertQuery>, String> {
+    pub fn new(text: &str) -> Result<Box<InsertQuery>, String> {
         let regex = Regex::new(r"
         (i?:insert[[:space:]]+into[[:space:]]+(P<table>?[[:alnum:]]*)[[:space:]]+\((P<names>?[[:alnum:]]*)\)[[:space:]]+values[[:space:]]+(P<values>[[:space:]]+)").unwrap();
         let mut res: Result<Box<InsertQuery>, String> = Err(String::from("failed"));
@@ -44,5 +44,35 @@ impl InsertQuery {
             }
         }
         res
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use parser::InsertQuery;
+
+    #[test]
+    fn empty_cols_and_values() {
+        assert!(InsertQuery::new("insert into 'a_table' () values ();").is_ok())
+    }
+
+    #[test]
+    fn missing_into_word() {
+        assert!(InsertQuery::new("insert 'a_table' (arg1) values (1);").is_err())
+    }
+
+    #[test]
+    fn inconsistent_number_of_values_and_args_1() {
+        assert!(InsertQuery::new("insert into 'a_table' (arg1) values (1,2);").is_err())
+    }
+
+    #[test]
+    fn inconsistent_number_of_values_and_args_2() {
+        assert!(InsertQuery::new("insert into 'a_table' (arg1, arg2) values (1);").is_err())
+    }
+
+    #[test]
+    fn missing_paranthesis() {
+        assert!(InsertQuery::new("insert into 'a_table' arg1 values 1;").is_err())
     }
 }

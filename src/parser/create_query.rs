@@ -1,18 +1,33 @@
 use regex::Regex;
+use filter::Type;
 
+/// Represents a CREATE statement.
+/// Contains a table name and a set of pairs for every column name and its corresponding type.
 #[derive(Debug)]
 pub struct CreateQuery {
     table: String,
-    columns: Vec<(String, String)>,
+    columns: Vec<(String, Type)>,
 }
 
+
 impl CreateQuery {
-    pub fn new(text: String) -> Result<Box<CreateQuery>, String> {
+
+    /// Returns a create query object or an error message
+    /// # Arguments
+    ///
+    /// * `text` - the query string that needs to be parsed
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let create_query = CreateQuery::new("create table my_table");
+    /// ```
+    pub fn new(text: &str) -> Result<Box<CreateQuery>, &'static str> {
         let regex = Regex::new(r"
         (i?:create[[:space:]]+table[[:space:]]+(P<table>?[[:alnum:]]*)[[:space:]]+\((P<cols>([[:space:]]*.*[[:space:]]+(varchar|int|float)[[:space:]]*,)*([[:space:]]*.*[[:space:]]+(varchar|int|float)[[:space:]]*))\)[[:space:]]*&").unwrap();
 
         match regex.captures(&text) {
-            None => Err(String::from("")),
+            None => Err(""),
             Some(matched) => match (matched.name("table"), matched.name("cols")) {
                 (Some(table), Some(cols)) => Ok(Box::new(CreateQuery {
                     table: String::from(table.as_str()),
@@ -27,12 +42,11 @@ impl CreateQuery {
                         })
                         .collect(),
                 })),
-                _ => Err(String::from("")),
+                _ => Err(""),
             },
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -40,6 +54,32 @@ mod tests {
 
     #[test]
     fn missing_table_clause() {
-        assert_eq!(CreateQuery::new(String::from("create table_name;")).is_err(), true)
+        assert!(CreateQuery::new("create table_name;").is_err())
     }
+
+    #[test]
+    fn missing_columns_in_create() {
+        assert!(CreateQuery::new("create table table_name;").is_err())
+    }
+
+    #[test]
+    fn invalid_type_in_create() {
+        assert!(CreateQuery::new("create table_name (col1 unknown_type);").is_err())
+    }
+
+    #[test]
+    fn missing_bracket_in_create() {
+        assert!(CreateQuery::new("create table_name (col1 varchar;").is_err())
+    }
+
+    #[test]
+    fn invalid_separator_in_create() {
+        assert!(CreateQuery::new("create table_name (col1 varchar; col2 varchar);").is_err())
+    }
+
+    #[test]
+    fn redundant_symbols_in_create() {
+        assert!(CreateQuery::new("create table_name (col1 varchar) asdasdsasad;").is_err())
+    }
+
 }

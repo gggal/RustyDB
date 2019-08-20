@@ -5,7 +5,7 @@ pub struct DropQuery {
 }
 
 impl DropQuery {
-    pub fn new(text: String) -> Result<Box<DropQuery>, String> {
+    pub fn new(text: &str) -> Result<Box<DropQuery>, String> {
         let regex = Regex::new(
             r"
         (i?:drop[[:space:]]+table[[:space:]]+(P<table>?[[:alnum:]]*)[[:space:]]*&",
@@ -20,7 +20,15 @@ impl DropQuery {
                 })),
                 _ => Err(String::from("")),
             },
-            _ => Err(String::from("")),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use parser::DropQuery;
+    #[test]
+    fn missing_from_word_in_drop_statement() {
+        assert!(DropQuery::new("drop 'a_table';").is_err());
     }
 }
