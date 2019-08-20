@@ -1,9 +1,9 @@
-extern crate regex;
 extern crate futures;
+extern crate regex;
 
-mod parser;
 mod filter;
 mod logical_operation;
+mod parser;
 mod record;
 
 fn main() {
