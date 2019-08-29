@@ -1,10 +1,10 @@
-use filter::Type;
+use filter::Var;
 use regex::Regex;
 
 // #[derive(Debug)]
 pub struct InsertQuery {
     columns: Vec<String>,
-    values: Vec<Type>,
+    values: Vec<Var>,
     table_name: String,
 }
 
@@ -17,7 +17,7 @@ impl InsertQuery {
         for cap in regex.captures_iter(&text) {
             let table_name = String::from(&cap[1]);
             let regex = Regex::new(r"(table_name//.).{0,1}[  a-Z_].{1}[a-Z1-9_].*").unwrap();
-            let values: Vec<Type> = Vec::new();
+            let values: Vec<Var> = Vec::new();
             if cap[2].split(',').all(|col| regex.is_match(col)) {
                 //Err(());
             }

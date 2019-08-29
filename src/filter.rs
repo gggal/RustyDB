@@ -1,41 +1,70 @@
 //pub mod parser {
 use std::collections::HashMap;
 
+/*
+so what do i need when parsing in terms of binding/variable structures:
+for CreateQuery -> just type for verification verification e.g. is the word int a valid type
+for InsertQuery -> it needs to be checked if the value given conforms to the type of every column
+for Filter
+*/
+
 ///A filter tree
 pub struct FilterTree {
     root: FilterNode,
-    vars: HashMap<String, Type>,
+    vars: HashMap<String, Var>,
 }
 
 //todo var, date
 #[derive(Debug)]
-pub enum Type {
+pub enum Var {
     INT(i64),
     DOUBLE(f64),
     VARCHAR(String),
     NULL,
 }
 
+#[derive(Debug)]
+pub enum Type {
+    INT,
+    DOUBLE,
+    VARCHAR,
+    TS,
+    NULL,
+}
+
+impl Type {
+    pub fn parse(text: &str) -> Result<Type, &'static str> {
+        match text {
+            "i?:int" => Ok(Type::INT),
+            "i?:double" => Ok(Type::DOUBLE),
+            "i?:varchar" => Ok(Type::VARCHAR),
+            "i?:timestamp" => Ok(Type::TS),
+            "i?:null" => Ok(Type::NULL),
+            _ => Err("Unsupported type was found"),
+        }
+    }
+}
+
 enum Operand {
-    CONST(Type),
+    CONST(Var),
     VAR(String),
     NODE(Box<FilterNode>),
 }
 
-impl Type {
-    fn str_to_type(text: &str) -> Result<Type, &str> {
+impl Var {
+    fn str_to_type(text: &str) -> Result<Var, &str> {
         let chrs: Vec<char> = text.chars().collect();
         let first: char = *chrs.first().unwrap();
         let last: char = *chrs.last().unwrap();
         let s: String = String::from(text);
         if regex::Regex::new(r"i?=null").unwrap().is_match(text) {
-            Ok(Type::NULL)
+            Ok(Var::NULL)
         } else {
             match (first, last) {
-                ('\'', '\'') => Ok(Type::VARCHAR(chrs[1..chrs.len() - 2].into_iter().collect())),
-                ('\"', '\"') => Ok(Type::VARCHAR(chrs[1..chrs.len() - 2].into_iter().collect())),
-                _real_num if chrs.contains(&'.') => Ok(Type::DOUBLE(s.parse().unwrap())),
-                _num => Ok(Type::INT(s.parse().unwrap())),
+                ('\'', '\'') => Ok(Var::VARCHAR(chrs[1..chrs.len() - 2].into_iter().collect())),
+                ('\"', '\"') => Ok(Var::VARCHAR(chrs[1..chrs.len() - 2].into_iter().collect())),
+                _real_num if chrs.contains(&'.') => Ok(Var::DOUBLE(s.parse().unwrap())),
+                _num => Ok(Var::INT(s.parse().unwrap())),
             }
         }
     }
@@ -90,7 +119,7 @@ impl Operand {
                 }
                 res.push(it.next().unwrap());
             }
-            match Type::str_to_type(&res) {
+            match Var::str_to_type(&res) {
                 Err(_) => {
                     to_return = Some(Operand::VAR(res));
                 }
@@ -182,10 +211,10 @@ impl Operator {
         match (self, op1, op2) {
             (
                 Operator::ADD(add_f),
-                Operand::CONST(Type::INT(val1)),
-                Operand::CONST(Type::INT(val2)),
-            ) => Operand::CONST(Type::INT(add_f(*val1, *val2))),
-            _ => Operand::CONST(Type::INT(0_i64)), //TODO add other operations
+                Operand::CONST(Var::INT(val1)),
+                Operand::CONST(Var::INT(val2)),
+            ) => Operand::CONST(Var::INT(add_f(*val1, *val2))),
+            _ => Operand::CONST(Var::INT(0_i64)), //TODO add other operations
         }
     }
 }
@@ -242,7 +271,7 @@ impl FilterNode {
 
     /// Binds the variables with the fields from the current row,
     /// the tree is being traversed in DFS matter and evaluated
-    fn evaluate(&mut self, bindings: &HashMap<String, Type>) {
+    fn evaluate(&mut self, bindings: &HashMap<String, Var>) {
         match &mut self.operand1 {
             Operand::VAR(var_name) => {
                 // let str = &var_name;
@@ -259,13 +288,13 @@ impl FilterNode {
     }
 }
 
-impl Clone for Type {
+impl Clone for Var {
     fn clone(&self) -> Self {
         match self {
-            Type::INT(i) => Type::INT(*i),
-            Type::DOUBLE(d) => Type::DOUBLE(*d),
-            Type::VARCHAR(v) => Type::VARCHAR(String::from(v)),
-            _ => Type::NULL,
+            Var::INT(i) => Var::INT(*i),
+            Var::DOUBLE(d) => Var::DOUBLE(*d),
+            Var::VARCHAR(v) => Var::VARCHAR(String::from(v)),
+            _ => Var::NULL,
         }
     }
 }
