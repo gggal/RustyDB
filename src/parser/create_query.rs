@@ -1,6 +1,13 @@
 use filter::Type;
 use parser::constants::CREATE_QUERY_REGEX;
 
+use pest::Parser;
+
+#[derive(Parser)]
+#[grammar = "grammar.pest"]
+pub struct SQLParser;
+
+
 /// Represents a CREATE statement.
 /// Contains a table name and a set of pairs for every column name and its corresponding type.
 #[derive(Debug)]
@@ -86,7 +93,7 @@ mod tests {
 
     #[test]
     fn case_inconsistent_query() {
-        assert!(CreateQuery::new("CReaTE table_name (col1 varchar);").is_ok())
+        assert!(CreateQuery::new("CrEaTe TabLe table_name (col1 int);").is_ok())
     }
 
 }

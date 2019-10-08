@@ -1,51 +1,83 @@
 use filter::FilterTree;
 use regex::Regex;
 
+use parser::Rule;
+use pest::iterators::Pair;
+
+struct SelectColumn {
+    table: String,
+    name: String,
+    alias: String
+}
+
 pub struct SelectQuery {
-    cols: Vec<(Option<String>, String, Option<String>)>,
+    cols: Vec<(SelectColumn)>,
     from: (Result<String, Box<SelectQuery>>, Option<String>),
     filter: Option<FilterTree>,
     // joins : Vec<Box<SelectQuery>>
 }
 
 impl SelectQuery {
-    pub fn new(text: &str) -> Result<Box<SelectQuery>, String> {
-        //match text.match("^select * from table where *"&)
-        let regex = Regex::new(r"^(?i)select[[:space:]]+(?P<cols>([[:alnum:]]*\.)?[[:alnum:]]+[[:space:]]+(as[[:space:]]+[[:alnum:]]+)?)[[:space:]]*from[[:space:]]+((?P<sub>\(.*\))|(?P<table>a))[[:space:]]+(where[[:space:]]+(?P<tree>.*))?$").unwrap();
+    pub fn new(rule: Pair<Rule>) -> Result<Box<SelectQuery>, &str> {
 
-        match regex.captures(&text) {
-            None => Err(String::from("")),
+        let iter = rule.into_inner();
 
-            Some(cap) => {
-                match (cap.name("cols"), cap.name("table"), cap.name("filter")) {
-                    //if either 'select' or 'from' clause is missing the query is not valid
-                    (Some(columns), Some(table), None) => match (
-                        SelectQuery::parse_select_cols(String::from(columns.as_str())),
-                        SelectQuery::parse_select_from(table.as_str().to_string()),
-                    ) {
-                        (Ok(c), Some(s)) => Ok(Box::new(SelectQuery {
-                            cols: c,
-                            from: s,
-                            filter: None,
-                        })),
-                        _ => Err(String::from("")),
-                    },
-                    (Some(columns), Some(table), Some(tree)) => match (
-                        SelectQuery::parse_select_cols(String::from(columns.as_str())),
-                        SelectQuery::parse_select_from(table.as_str().to_string()),
-                        FilterTree::new(&tree.as_str()),
-                    ) {
-                        (Ok(c), Some(s), Ok(t)) => Ok(Box::new(SelectQuery {
-                            cols: c,
-                            from: s,
-                            filter: Some(t),
-                        })),
-                        _ => Err(String::from("")),
-                    },
-                    _ => Err("".to_string()),
+        let first : bool = true;
+        //select clause
+        for col in iter {
+            if let Rule::SELECT_COLUMN = col.as_rule() {
+                
+            } else {
+                if first {
+                    Err("Select clause in empty")
                 }
+                break;
             }
+
+
+
         }
+
+        while innerRule in rule.into_inner() {
+            match innerRule {
+                "asline.into_innerd" => "",
+            };
+        }
+        Err("")
+
+        // match regex.captures(&text) {
+        //     None => Err(String::from("")),
+
+        //     Some(cap) => {
+        //         match (cap.name("cols"), cap.name("table"), cap.name("filter")) {
+        //             //if either 'select' or 'from' clause is missing the query is not valid
+        //             (Some(columns), Some(table), None) => match (
+        //                 SelectQuery::parse_select_cols(String::from(columns.as_str())),
+        //                 SelectQuery::parse_select_from(table.as_str().to_string()),
+        //             ) {
+        //                 (Ok(c), Some(s)) => Ok(Box::new(SelectQuery {
+        //                     cols: c,
+        //                     from: s,
+        //                     filter: None,
+        //                 })),
+        //                 _ => Err(String::from("")),
+        //             },
+        //             (Some(columns), Some(table), Some(tree)) => match (
+        //                 SelectQuery::parse_select_cols(String::from(columns.as_str())),
+        //                 SelectQuery::parse_select_from(table.as_str().to_string()),
+        //                 FilterTree::new(&tree.as_str()),
+        //             ) {
+        //                 (Ok(c), Some(s), Ok(t)) => Ok(Box::new(SelectQuery {
+        //                     cols: c,
+        //                     from: s,
+        //                     filter: Some(t),
+        //                 })),
+        //                 _ => Err(String::from("")),
+        //             },
+        //             _ => Err("".to_string()),
+        //         }
+        //     }
+        // }
     }
     fn parse_select_cols(
         text: String,

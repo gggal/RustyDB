@@ -34,12 +34,12 @@ pub enum Type {
 
 impl Type {
     pub fn parse(text: &str) -> Result<Type, &'static str> {
-        match text {
-            "i?:int" => Ok(Type::INT),
-            "i?:double" => Ok(Type::DOUBLE),
-            "i?:varchar" => Ok(Type::VARCHAR),
-            "i?:timestamp" => Ok(Type::TS),
-            "i?:null" => Ok(Type::NULL),
+        match text.to_lowercase().as_ref() {
+            "int" => Ok(Type::INT),
+            "double" => Ok(Type::DOUBLE),
+            "varchar" => Ok(Type::VARCHAR),
+            "timestamp" => Ok(Type::TS),
+            "null" => Ok(Type::NULL),
             _ => Err("Unsupported type was found"),
         }
     }
