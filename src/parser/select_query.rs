@@ -4,38 +4,71 @@ use regex::Regex;
 use parser::Rule;
 use pest::iterators::Pair;
 
+use std::collections::HashSet;
+
+use std::hash::{Hash, Hasher};
+
+#[derive(Eq)]
 struct SelectColumn {
     table: String,
     name: String,
     alias: String
 }
 
+#[derive(Eq)]
 pub struct SelectQuery {
     cols: Vec<(SelectColumn)>,
-    from: (Result<String, Box<SelectQuery>>, Option<String>),
+    from: (String, Box<SelectQuery>),
     filter: Option<FilterTree>,
     // joins : Vec<Box<SelectQuery>>
+}
+
+impl PartialEq for SelectColumn {
+    fn eq(&self, other: &Self) -> bool {
+        self.table == other.table &&self.name == other.name
+    }
+}
+
+impl PartialEq for SelectQuery {
+    fn eq(&self, other: &Self) -> bool {
+        true
+    }
+}
+
+trait Eq: PartialEq<Self> {}
+
+impl Hash for SelectColumn {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.table.hash(state);
+        self.name.hash(state);
+    }
 }
 
 impl SelectQuery {
     pub fn new(rule: Pair<Rule>) -> Result<Box<SelectQuery>, &str> {
 
-        let iter = rule.into_inner();
+        let iter = rule.into_inner();        
 
-        let first : bool = true;
-        //select clause
-        for col in iter {
-            if let Rule::SELECT_COLUMN = col.as_rule() {
-                
-            } else {
-                if first {
-                    Err("Select clause in empty")
+        //assuming select query has 5 clauses => select, from, where, group by, having (eventually can add order by etc)
+
+        // working on the select clause of the query
+        match parse_select_clause(iter.next().unwrap().as_rule()) {
+            None => "",
+            Ok(HashSet<>)
+        }
+
+        // working on the select clause of the query
+        if let Rule::SELECT_CLAUSE = iter.next().as_rule {
+            //in the select clause account for every select col:
+            for col in iter.next.as_inner() {
+                match col.as_inner {
+                    "*" => "Select all",
+                    Rule::SelectColumn => add to a map,
+                    unreachable!("A column is neighter an asterix nor a column token")
                 }
-                break;
             }
-
-
-
+        } else {
+            unreachable!("Query doesn't conform to the standard: no select clause in select query")
         }
 
         while innerRule in rule.into_inner() {
@@ -44,41 +77,28 @@ impl SelectQuery {
             };
         }
         Err("")
-
-        // match regex.captures(&text) {
-        //     None => Err(String::from("")),
-
-        //     Some(cap) => {
-        //         match (cap.name("cols"), cap.name("table"), cap.name("filter")) {
-        //             //if either 'select' or 'from' clause is missing the query is not valid
-        //             (Some(columns), Some(table), None) => match (
-        //                 SelectQuery::parse_select_cols(String::from(columns.as_str())),
-        //                 SelectQuery::parse_select_from(table.as_str().to_string()),
-        //             ) {
-        //                 (Ok(c), Some(s)) => Ok(Box::new(SelectQuery {
-        //                     cols: c,
-        //                     from: s,
-        //                     filter: None,
-        //                 })),
-        //                 _ => Err(String::from("")),
-        //             },
-        //             (Some(columns), Some(table), Some(tree)) => match (
-        //                 SelectQuery::parse_select_cols(String::from(columns.as_str())),
-        //                 SelectQuery::parse_select_from(table.as_str().to_string()),
-        //                 FilterTree::new(&tree.as_str()),
-        //             ) {
-        //                 (Ok(c), Some(s), Ok(t)) => Ok(Box::new(SelectQuery {
-        //                     cols: c,
-        //                     from: s,
-        //                     filter: Some(t),
-        //                 })),
-        //                 _ => Err(String::from("")),
-        //             },
-        //             _ => Err("".to_string()),
-        //         }
-        //     }
-        // }
     }
+
+    fn parse_select_clause(&mut self, rule: Pair<Rule>) -> Option<HashSet<SelectColumn>> {
+        if let Rule::SELECT_CLAUSE = rule {
+
+            let res = HashSet::new();
+            let all : bool = false;
+            //in the select clause account for every select col:
+            for col in rule.as_inner() {
+                match col.as_inner {
+                    "*" => all = true,
+                    Rule::SelectColumn => res.add(col.as_inner),
+                    unreachable!("A column is neighter an asterix nor a column token")
+                }
+            }
+            Some(res)
+        } else {
+            None
+        }
+    }
+
+
     fn parse_select_cols(
         text: String,
     ) -> Result<Vec<(Option<String>, String, Option<String>)>, String> {
