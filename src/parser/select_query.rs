@@ -88,8 +88,8 @@ impl SelectQuery {
             for col in rule.as_inner() {
                 match col.as_inner {
                     "*" => all = true,
-                    Rule::SelectColumn => res.add(col.as_inner),
-                    unreachable!("A column is neighter an asterix nor a column token")
+                    Rule::SELECT_COLUMN => { res.insert(col.as_inner); },
+                    _ => unreachable!("A column is neighter an asterix nor a column token")
                 }
             }
             Some(res)
