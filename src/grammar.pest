@@ -1,79 +1,85 @@
 // TODO add description for sql as a FOL....
-// TODO add support for ommitted paranthesis in the filter clause
 
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 
-//primitivesr
-LOGICAL_PRIMITIVE = {"TRUE" | "FALSE"}
+// primitives
+LOGICAL_PRIMITIVE = { "TRUE" | "FALSE" }
 NUMERIC_PRIMITIVE = @{
-    "-"?
-    ~ ("0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)
-    ~ ("." ~ ASCII_DIGIT*)?
-    ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?
+                    "-"?
+                    ~ ("0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)
+                    ~ ("." ~ ASCII_DIGIT*)?
+                    ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?
 }
-LITERAL = {"\"" ~ LETTER* ~ "\""}
-NULL_PRIMITIVE = {"NULL"}
-PRIMITIVE = {NUMERIC_PRIMITIVE | LOGICAL_PRIMITIVE | LITERAL | NULL_PRIMITIVE}
+LITERAL = { "\"" ~ LETTER* ~ "\"" }
+NULL_PRIMITIVE = { "NULL" }
+PRIMITIVE = { NUMERIC_PRIMITIVE | LOGICAL_PRIMITIVE | LITERAL | NULL_PRIMITIVE }
 
-//identifier
+// identifier
 IDENTIFIER = { (ASCII_ALPHANUMERIC | "_")+ }
 
-//operators and expressions
-LOGICAL_OPERATOR = {"OR" | "AND" | "="}
-ARITHMETICAL_OPERATOR = {"+" | "-" | "*" | "/" | "="}
-OPERATOR = {LOGICAL_OPERATOR | ARITHMETICAL_OPERATOR}
-// EXPRESSION = {IDENTIFIER | PRIMITIVE | "(" ~ EXPRESSION ~ OPERATOR ~ EXPRESSION ~ ")"}
-EXPRESSION = { IDENTIFIER | PRIMITIVE | PRIMITIVE ~ (OPERATOR ~ EXPRESSION)* ~ ")"}
-CONDITION = { EXPRESSION ~ LOGICAL_OPERATOR ~ EXPRESSION}
+// math expressions
+OPERAND = { NUMERIC_PRIMITIVE | LITERAL }
+CONDITIONAL_OPERATOR = { "=" | "<" | ">" }
+ARITHM_OPERATOR = { "+" | "-" | "*" | "/" | "%" }
+MATH_EXPR = {
+              MATH_PARANTHESES_EXPR ~ ARITHM_OPERATOR ~ MATH_EXPR |
+              MATH_PARANTHESES_EXPR ~ ARITHM_OPERATOR ~ MATH_PARANTHESES_EXPR |
+              OPERAND ~ ARITHM_OPERATOR ~ MATH_EXPR |
+              OPERAND ~ ARITHM_OPERATOR ~ MATH_PARANTHESES_EXPR |
+              OPERAND
+            }
+MATH_PARANTHESES_EXPR = { "(" ~ MATH_EXPR ~ ")" }
+EQUATION = { MATH_EXPR ~ CONDITIONAL_OPERATOR ~ MATH_EXPR }
+
+// generic expressions
+LOGICAL_OPERATOR = { "OR" | "AND" }
+LOGICAL_EXPR = { LOGICAL_PRIMITIVE | EQUATION }
+CONDITION = { LOGICAL_EXPR ~ LOGICAL_OPERATOR ~ CONDITION | LOGICAL_EXPR }
 
 //create query
-TYPE = { "INT"|"VARCHAR"|"DOUBLE"|"TIMESTAMP"|"NULL"}
-CREATE_QUERY = {^"CREATE" ~ ^"TABLE" ~ IDENTIFIER ~ LIST_OF_COLUMNS }
-LIST_OF_COLUMNS = { "(" ~ PAIR ~ ("," ~ PAIR)* ~ ")"}
+TYPE = { "INT" | "VARCHAR" | "DOUBLE" | "TIMESTAMP" | "NULL" }
+CREATE_QUERY = { ^"CREATE" ~ ^"TABLE" ~ IDENTIFIER ~ LIST_OF_COLUMNS }
+LIST_OF_COLUMNS = { "(" ~ PAIR ~ ("," ~ PAIR)* ~ ")" }
 PAIR = { IDENTIFIER ~ TYPE }
-TABLE_COL = @{IDENTIFIER ~ ( "." ~ IDENTIFIER)? }
+TABLE_COL = @{ IDENTIFIER ~ ( "." ~ IDENTIFIER)? }
 
 //drop query
-DROP_QUERY = {^"DROP" ~ ^"TABLE" ~ IDENTIFIER}
+DROP_QUERY = { ^"DROP" ~ ^"TABLE" ~ IDENTIFIER }
 
 //delete query
-DELETE_QUERY = {"DELETE" ~ "FROM" ~ IDENTIFIER ~ "WHERE" ~ CONDITION}
+DELETE_QUERY = { "DELETE" ~ "FROM" ~ IDENTIFIER ~ "WHERE" ~ CONDITION }
 
 //insert query
-INSERT_QUERY = {"INSERT" ~ "INTO" ~ IDENTIFIER ~ "(" ~ IDENTIFIER + ~ ")" ~
-"VALUES" ~ "(" ~ PRIMITIVE + ~ ")"}
+INSERT_QUERY = { "INSERT" ~ "INTO" ~ IDENTIFIER ~ "(" ~ IDENTIFIER + ~ ")" ~
+"VALUES" ~ "(" ~ PRIMITIVE + ~ ")" }
 
 //update query
-UPDATE_QUERY = {"UPDATE" ~ "TABLE" ~ FROM_TABLE ~ 
-"SET" ~ IDENTIFIER ~ "=" ~ PRIMITIVE ~ "WHERE" ~ CONDITION}
+UPDATE_QUERY = { "UPDATE" ~ "TABLE" ~ FROM_TABLE ~ 
+"SET" ~ IDENTIFIER ~ "=" ~ PRIMITIVE ~ "WHERE" ~ CONDITION }
 
 
-SELECT_CLAUSE = {SELECT_COLUMN+}
+SELECT_CLAUSE = { SELECT_COLUMN+ }
 
 //select query
-SELECT_QUERY = {"SELECT" ~SELECT_CLAUSE  ~ 
-"FROM" ~ FROM_TABLE ~
-"WHERE" ~ CONDITION ~
-("GROUP BY" ~ IDENTIFIER+ ~ ("HAVING" ~ CONDITION)*)*}
+SELECT_QUERY = { "SELECT" ~ SELECT_CLAUSE ~ 
+                "FROM" ~ FROM_TABLE ~
+                "WHERE" ~ CONDITION ~
+                ("GROUP BY" ~ IDENTIFIER+ ~ ("HAVING" ~ CONDITION)*)* }
 
 SELECT_COLUMN = { ("*" | TABLE_COL)+ }
 //subquery
-SUBQUERY = {"(" ~ SELECT_QUERY ~ ")"}
+SUBQUERY = { "(" ~ SELECT_QUERY ~ ")" }
 
-JOIN_CLAUSE = {IDENTIFIER ~ ("INNER"|"LEFT OUTER"|"RIGHT OUTER")? ~
+JOIN_CLAUSE = { IDENTIFIER ~ ("INNER"|"LEFT OUTER"|"RIGHT OUTER")? ~
  "JOIN" ~ (IDENTIFIER | SUBQUERY ~ "AS" ~ IDENTIFIER) ~ "ON" ~ 
  (TABLE_COL ~ "=" ~ TABLE_COL)+ }
 
-FROM_TABLE = {IDENTIFIER | SUBQUERY | JOIN_CLAUSE}
+FROM_TABLE = { IDENTIFIER | SUBQUERY | JOIN_CLAUSE }
 
-
-QUERY = {SELECT_QUERY |
-        INSERT_QUERY |
-        CREATE_QUERY |
-        DELETE_QUERY |
-        UPDATE_QUERY |
-        DROP_QUERY}
-
-
-
+QUERY = { SELECT_QUERY |
+          INSERT_QUERY |
+          CREATE_QUERY |
+          DELETE_QUERY |
+          UPDATE_QUERY |
+          DROP_QUERY }
